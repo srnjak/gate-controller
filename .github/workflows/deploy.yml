@@ -1,0 +1,48 @@
+name: Deploy to Nexus and Tag
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: |
+          pip install setuptools wheel twine
+
+      - name: Build package
+        run: python setup.py sdist bdist_wheel
+
+      - name: Upload to Nexus
+        env:
+          REPOSITORY_USERNAME: ${{ vars.REPOSITORY_USERNAME }}
+          REPOSITORY_PASSWORD: ${{ secrets.REPOSITORY_PASSWORD }}
+        run: |
+          twine upload --repository-url https://your-nexus-repo/repository/your-repo-name/ -u $REPOSITORY_USERNAME -p $REPOSITORY_PASSWORD dist/*
+
+      - name: Tagging
+        if: success()
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git tag -a "v${{ steps.get_version.outputs.VERSION }}" -m "Release v${{ steps.get_version.outputs.VERSION }}"
+          git push --tags
+
+      - name: Prepare next version
+        if: success()
+        run: |
+          git checkout develop
+          python bump_version.py
+          NEW_VERSION=$(grep '__version__' version.py | sed -e "s/__version__ = '\(.*\)'/\1/")
+          git add version.py
+          git commit -m "Prepare for next release version $NEW_VERSION"
+          git push origin develop
