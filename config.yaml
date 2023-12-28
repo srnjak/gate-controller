@@ -1,0 +1,22 @@
+# Main Configuration File
+
+# The host on which the Flask server will listen.
+# Use '0.0.0.0' to listen on all available network interfaces.
+host_listen: 0.0.0.0
+
+# The port on which the Flask server will listen.
+port: 5000
+
+# Enable or disable debug mode.
+# Set to 'true' to enable debug mode, which provides detailed error messages.
+# Set to 'false' to disable debug mode in production.
+debug: false
+
+# List of allowed IP addresses or subnets that can access the server.
+# You can specify IP addresses or subnets in CIDR notation.
+# Example:
+# allowed_ips:
+#   - 192.168.1.0/24
+#   - 10.0.0.1
+allowed_ips:
+  - 192.168.0.0/24

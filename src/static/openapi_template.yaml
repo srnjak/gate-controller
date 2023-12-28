@@ -1,0 +1,86 @@
+openapi: 3.0.0
+info:
+  title: Gate Control API
+  version: 1.0.0
+  description: API for controlling and querying the status of a gate.
+
+servers:
+  - url: http://{host}:{port}/gate
+    description: Gate Control Server
+
+paths:
+  /open:
+    put:
+      summary: Open the gate.
+      responses:
+        '200':
+          description: Gate opening command has been sent.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: Opening gate command sent successfully.
+
+  /close:
+    put:
+      summary: Close the gate.
+      responses:
+        '200':
+          description: Gate closing command has been sent.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: Closing gate command sent successfully.
+
+  /stop:
+    put:
+      summary: "Stop the gate's current action."
+      responses:
+        '200':
+          description: Gate stop command has been sent.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: Stopping gate command sent successfully.
+
+  /toggle:
+    put:
+      summary: "Toggle the gate's next action."
+      description: Sends a signal to move the gate to the next state in its sequence.
+      responses:
+        '200':
+          description: Gate toggle command has been sent.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: Toggling gate action command sent successfully.
+
+  /status:
+    get:
+      summary: Get the current status of the gate.
+      responses:
+        '200':
+          description: The current status of the gate.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: Gate is currently closed.
