@@ -31,12 +31,12 @@ jobs:
           twine upload --repository-url $REPOSITORY_URL -u $REPOSITORY_USERNAME -p $REPOSITORY_PASSWORD dist/*
 
       - name: Tagging
-        if: success()
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
+          echo "New tag: ${{ steps.get_version.outputs.VERSION }}"
           git tag -a "v${{ steps.get_version.outputs.VERSION }}" -m "Release v${{ steps.get_version.outputs.VERSION }}"
-          git push --tags
+          git push --tags https://${{ secrets.MY_PERSONAL_ACCESS_TOKEN }}@github.com/${{ github.repository }}
 
       - name: Prepare next version
         if: success()
