@@ -1,5 +1,5 @@
 from flask import request
-from config_loader import load_config
+from gate_controller.utils.config_loader import load_config
 
 # Load configuration using the config_loader module
 config_data = load_config()
