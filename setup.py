@@ -36,8 +36,7 @@ setup(
     },
     include_package_data=True,
     package_data={
-        '': ['*.yaml', '*.json'],
-        'gate_controller': ['static/*.yaml'],
+        'gate_controller': ['config/*.yaml', 'static/*.yaml'],
     },
     entry_points={
         'console_scripts': [
