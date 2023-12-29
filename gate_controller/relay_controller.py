@@ -4,7 +4,7 @@
 try:
     import RPi.GPIO as GPIO
 except ImportError:
-    from mocks import MOCK_GPIO as GPIO
+    from gate_controller.mocks import MOCK_GPIO as GPIO
 
 import json
 import os
