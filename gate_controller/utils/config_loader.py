@@ -1,6 +1,6 @@
 import os
 import yaml
-from app_root import APP_ROOT
+from gate_controller.utils.app_root import APP_ROOT
 
 
 def load_config():
