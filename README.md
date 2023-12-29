@@ -56,12 +56,12 @@ The `gate-controller` uses a `config.yaml` file for configuration. Customize the
 
 ### Configuration Options
 
-| Option        | Default Value        | Description                                                                                               | Example                                                                                                             |
-|---------------|----------------------|-----------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------|
-| `host_listen` | `'0.0.0.0'`          | The host IP address on which the Flask server will listen. `'0.0.0.0'` listens on all network interfaces. | To listen only on the local machine, set to `'127.0.0.1'`.                                                          |
-| `port`        | `5000`               | The port number on which the server will listen.                                                          | To change the port, set to any valid port number, like `8080`.                                                      |
-| `debug`       | `false`              | Enables or disables debug mode. Useful for development.                                                   | Set to `true` for development to enable debug mode.                                                                 |
-| `allowed_ips` | `['192.168.0.0/24']` | A list of IP addresses or subnets in CIDR notation that are allowed to access the server.                 | To allow only a specific IP, set to `['192.168.0.5']`. For two subnets, set to `['192.168.0.0/24', '10.0.0.0/24']`. |
+| Option        | Default Value                    | Description                                                                                               | Example                                                                                                             |
+|---------------|----------------------------------|-----------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------|
+| `host_listen` | `'0.0.0.0'`                      | The host IP address on which the Flask server will listen. `'0.0.0.0'` listens on all network interfaces. | To listen only on the local machine, set to `'127.0.0.1'`.                                                          |
+| `port`        | `5000`                           | The port number on which the server will listen.                                                          | To change the port, set to any valid port number, like `8080`.                                                      |
+| `debug`       | `false`                          | Enables or disables debug mode. Useful for development.                                                   | Set to `true` for development to enable debug mode.                                                                 |
+| `allowed_ips` | `['127.0.0.1','192.168.0.0/24']` | A list of IP addresses or subnets in CIDR notation that are allowed to access the server.                 | To allow only a specific IP, set to `['192.168.0.5']`. For two subnets, set to `['192.168.0.0/24', '10.0.0.0/24']`. |
 
 ### Customizing the Configuration
 
@@ -97,14 +97,27 @@ Replace `<action>` with `open`, `close`, `stop`, or `toggle`.
 
 ## API Endpoints
 
-The Gate Control API provides endpoints for controlling the gate and querying its status. 
+The Gate Control API offers a range of endpoints for controlling the gate and querying its status, as well as accessing the OpenAPI documentation. 
 These endpoints are part of the Flask server and are accessible when the server is running:
 
-- **Open Gate**: `PUT /gate/open`
-- **Close Gate**: `PUT /gate/close`
-- **Stop Gate**: `PUT /gate/stop`
-- **Toggle Gate**: `PUT /gate/toggle`
-- **Gate Status**: `GET /gate/status`
+- **Open Gate**:
+   - `PUT /gate/open` - Sends a command to open the gate.
+
+- **Close Gate**:
+   - `PUT /gate/close` - Sends a command to close the gate.
+
+- **Stop Gate**:
+   - `PUT /gate/stop` - Stops the gate's current action.
+
+- **Toggle Gate**:
+   - `PUT /gate/toggle` - Toggles the gate's next action.
+
+- **Gate Status**:
+   - `GET /gate/status` - Retrieves the current status of the gate.
+
+- **OpenAPI Documentation**:
+   - `GET /openapi` - Retrieves the OpenAPI documentation for the Gate Control API.
+
 
 ## Uninstallation
 

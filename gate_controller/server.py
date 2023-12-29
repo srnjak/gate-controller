@@ -3,6 +3,7 @@ import yaml
 from flask import Flask, jsonify, request, make_response
 from gate_controller.gate_controller import control_gate, get_status
 from werkzeug.middleware.proxy_fix import ProxyFix
+from threading import Thread
 from gate_controller.utils.ip_filter import is_ip_allowed
 from gate_controller.utils.config_loader import load_config
 
@@ -20,6 +21,11 @@ DEBUG_MODE = config_data.get('debug', False)
 app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1)
 
 
+def async_control_gate(action):
+    """Function to run control_gate() in a separate thread."""
+    Thread(target=control_gate, args=(action,)).start()
+
+
 # Custom middleware to filter requests based on allowed IPs
 @app.before_request
 def limit_remote_addr():
@@ -35,25 +41,25 @@ def generate_openapi_spec(host, api_port):
 
 @app.route('/gate/open', methods=['PUT'])
 def open_gate_route():
-    control_gate('open')
+    async_control_gate('open')
     return jsonify({'status': 'Opening gate command sent successfully.'}), 200
 
 
 @app.route('/gate/close', methods=['PUT'])
 def close_gate_route():
-    control_gate('close')
+    async_control_gate('close')
     return jsonify({'status': 'Closing gate command sent successfully.'}), 200
 
 
 @app.route('/gate/stop', methods=['PUT'])
 def stop_gate_route():
-    control_gate('stop')
+    async_control_gate('stop')
     return jsonify({'status': 'Stopping gate command sent successfully.'}), 200
 
 
 @app.route('/gate/toggle', methods=['PUT'])
 def toggle_gate_route():
-    control_gate('toggle')
+    async_control_gate('toggle')
     return jsonify(
         {'status': 'Toggling gate action command sent successfully.'}), 200
 
