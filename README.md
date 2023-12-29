@@ -30,6 +30,14 @@ Before installing `gate-controller`, you need to configure pip to use the custom
 
    This tells pip to use your custom repository hosted on Nexus.
 
+### Installing the RPI.GPIO package
+1. Install the `RPi.GPIO` package, which is required for Raspberry Pi functionality:
+
+   ```
+   pip install RPi.GPIO
+   ```
+
+
 ### Installing the Gate Controller
 
 After configuring pip:
