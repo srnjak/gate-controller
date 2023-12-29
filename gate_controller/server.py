@@ -1,7 +1,7 @@
+import os
+import yaml
 from flask import Flask, jsonify, request, make_response
 from gate_controller.gate_controller import control_gate, get_status
-import yaml
-import os
 from werkzeug.middleware.proxy_fix import ProxyFix
 from gate_controller.utils.ip_filter import is_ip_allowed
 from gate_controller.utils.config_loader import load_config

@@ -5,9 +5,6 @@ import pkg_resources
 
 def load_config():
     config_paths = [
-        # Environment variable
-        os.environ.get('GATE_CONTROLLER_CONFIG'),
-
         # User's home directory
         os.path.expanduser('~/.gate_controller/config.yaml'),
 

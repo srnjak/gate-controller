@@ -44,11 +44,23 @@ After configuring pip:
 
 ## Configuration
 
-The project uses `config.yaml` for its default configuration. 
-The configuration can be customized in the following order of priority:
-1. A file specified by the `--config` command line argument.
-2. A file located at `~/.gate_controller/config.yaml`.
-3. A file located at `/etc/gate_controller/config.yaml`.
+The `gate-controller` uses a `config.yaml` file for configuration. Customize the settings according to your requirements. Below is a table of the available configuration options, their default values, and examples.
+
+### Configuration Options
+
+| Option        | Default Value        | Description                                                                                               | Example                                                                                                             |
+|---------------|----------------------|-----------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------|
+| `host_listen` | `'0.0.0.0'`          | The host IP address on which the Flask server will listen. `'0.0.0.0'` listens on all network interfaces. | To listen only on the local machine, set to `'127.0.0.1'`.                                                          |
+| `port`        | `5000`               | The port number on which the server will listen.                                                          | To change the port, set to any valid port number, like `8080`.                                                      |
+| `debug`       | `false`              | Enables or disables debug mode. Useful for development.                                                   | Set to `true` for development to enable debug mode.                                                                 |
+| `allowed_ips` | `['192.168.0.0/24']` | A list of IP addresses or subnets in CIDR notation that are allowed to access the server.                 | To allow only a specific IP, set to `['192.168.0.5']`. For two subnets, set to `['192.168.0.0/24', '10.0.0.0/24']`. |
+
+### Customizing the Configuration
+
+Create your own `config.yaml` file and specify the custom values based on the options in the table above. The application searches for this file in the following order:
+
+1. A file located at `~/.gate_controller/config.yaml`.
+2. A file located at `/etc/gate_controller/config.yaml`.
 
 If no custom configuration file is found, the application uses the default settings packaged with the application.
 
