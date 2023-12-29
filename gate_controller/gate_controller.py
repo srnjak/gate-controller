@@ -1,6 +1,6 @@
 import sys
 import time
-from relay_controller import control_relay
+from gate_controller.relay_controller import control_relay
 
 # Define a mapping of high-level commands to relay indices
 command_mapping = {
