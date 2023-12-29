@@ -40,6 +40,11 @@ jobs:
         run: |
           twine upload --repository-url $REPOSITORY_URL -u $REPOSITORY_USERNAME -p $REPOSITORY_PASSWORD dist/*
 
+      - name: Get current version
+        id: get_version
+        run: |
+          echo "::set-output name=VERSION::$(python -c 'from version import __version__; print(__version__)')"
+
       - name: Tagging
         run: |
           git config --local user.email "action@github.com"
