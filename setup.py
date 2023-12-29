@@ -3,9 +3,13 @@ from setuptools import setup, find_packages
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
+# Read version from version.py
+with open('version.py') as f:
+    exec(f.read())
+
 setup(
     name='gate-controller',
-    version='1.0.0',
+    version=__version__,
     author='Grega Krajnc',
     author_email='grega.dev@srnjak.com',
     description='The Gate Controller Project, specifically designed for the '
@@ -23,6 +27,7 @@ setup(
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9',
+        'Programming Language :: Python :: 3.10',
     ],
     python_requires='>=3.6',
     install_requires=[

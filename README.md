@@ -2,12 +2,12 @@
 
 ## Overview
 The Gate Controller Project is a Python-based application specifically designed for the Raspberry Pi, interfacing with the RPi Relay Board (B) for automated gate control. 
-This project allows for the automated opening, closing, stopping, and toggling of gate systems using the GPIO pins on the Raspberry Pi. 
-It also includes a server component built with Flask, offering a simple API for gate control operations. 
-The project is tailored for the [Waveshare RPi Relay Board (B)](https://www.waveshare.com/wiki/RPi_Relay_Board_(B)), ensuring seamless integration and control functionality.
+This project enables the automated opening, closing, stopping, and toggling of gate systems using the GPIO pins on the Raspberry Pi. 
+It includes a server component built with Flask, offering a simple API for gate control operations. 
+Tailored for the [Waveshare RPi Relay Board (B)](https://www.waveshare.com/wiki/RPi_Relay_Board_(B)), it provides seamless integration and functionality.
 
 ## Requirements
-- Python 3.x
+- Python 3.6 or higher
 - Raspberry Pi with GPIO pins
 - [RPi Relay Board (B)](https://www.waveshare.com/wiki/RPi_Relay_Board_(B)) for relay control
 - Flask for the server component
@@ -15,60 +15,60 @@ The project is tailored for the [Waveshare RPi Relay Board (B)](https://www.wave
 ## Installation
 
 ### Setting Up the Environment
-1. Ensure you have Python 3 installed on your Raspberry Pi.
-2. Clone the repository to your Raspberry Pi or download the source code.
+1. Ensure Python 3.6+ is installed on your Raspberry Pi.
+2. Clone the repository or download the source code:
+   ```
+    git clone https://github.com/srnjak/gate-controller.git
+   ```
 3. Navigate to the project directory:
    ```
-    cd my_project
+    cd gate-controller
    ```
-4. Install required Python packages:
+4. Install required Python packages using the provided `requirements.txt`:
    ```
     pip3 install -r requirements.txt
    ```
 
 ## Configuration
 
-No additional configuration is required for this project. 
-The application automatically creates a `runtime_data` directory, if it doesn't exist, for storing runtime-generated data such as relay states.
-
+The project uses `config.yaml` for configuration and automatically creates a `runtime_data` directory, if it doesn't exist, to store runtime-generated data such as relay states.
 
 ## Usage
 
 ### Running the Application
 
-1. To control the gate:
+1. To control the gate, use the following command with the appropriate action:
+   ```
+    python3 gate_controller/gate_controller.py <action>
+   ```
+   Replace `<action>` with `open`, `close`, `stop`, or `toggle`.
 
+2. To start the server and access the API for gate control:
    ```
-    python3 src/gate_controller.py <command>
+    python3 gate_controller/server.py
    ```
-   Replace `<command>` with `open`, `close`, `stop`, or `toggle`.
-
-2. To start the server:
-   ```
-    python3 src/server.py
-   ```
-   The server provides an API to control the gate and can be accessed via the specified port.
+   The server listens on `http://localhost:5000` by default.
 
 ## API Endpoints
 
-The Gate Control API provides the following endpoints for controlling and querying the status of a gate:
+The Gate Control API offers endpoints for controlling the gate and querying its status:
 
 - **Open Gate**:
-   - `PUT /open`: Sends a command to open the gate.
+   - `PUT /gate/open`: Opens the gate.
 - **Close Gate**:
-   - `PUT /close`: Sends a command to close the gate.
+   - `PUT /gate/close`: Closes the gate.
 - **Stop Gate**:
-   - `PUT /stop`: Stops the gate's current action.
+   - `PUT /gate/stop`: Stops the gate's motion.
 - **Toggle Gate**:
-   - `PUT /toggle`: Toggles the gate's next action.
+   - `PUT /gate/toggle`: Toggles the gate's state.
 - **Gate Status**:
-   - `GET /status`: Retrieves the current status of the gate.
+   - `GET /gate/status`: Retrieves the current status of the gate.
 
-These endpoints are accessible through the server running on `http://localhost:5000/gate`.
-
+These endpoints are part of the Flask server, accessible when the server is running.
 
 ### Using Mocks (for Development)
-For development on non-Raspberry Pi systems, the project includes a `mocks` directory. The MOCK_GPIO.py file simulates GPIO functionality, allowing for testing and development without a Raspberry Pi.
+To facilitate development without a physical Raspberry Pi, the project includes mock modules in the `mocks` directory. The `MOCK_GPIO.py` file simulates GPIO functionality, enabling testing and development on other systems.
 
 ## License
-This project is released under the [MIT License](https://opensource.org/licenses/MIT).
+
+This project is licensed under the [MIT License](https://opensource.org/licenses/MIT).
