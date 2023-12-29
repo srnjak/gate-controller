@@ -41,6 +41,7 @@ setup(
     entry_points={
         'console_scripts': [
             'gate-controller-server=gate_controller.server:main',
+            'gate-controller=gate_controller.cli:cli',
         ],
     },
 )

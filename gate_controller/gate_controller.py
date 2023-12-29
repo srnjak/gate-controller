@@ -1,4 +1,3 @@
-import sys
 import time
 from gate_controller.relay_controller import control_relay
 
@@ -27,18 +26,3 @@ def control_gate(command):
 def get_status():
     # TODO Placeholder for gate status retrieval logic
     return 'unknown'
-
-
-if __name__ == "__main__":
-    try:
-        action = sys.argv[1]
-        if action == 'status':
-            print(get_status())
-        else:
-            control_gate(action)
-    except IndexError:
-        print("Usage: python gate_control.py <command>")
-        sys.exit(1)
-    except ValueError as e:
-        print(str(e))
-        sys.exit(1)
