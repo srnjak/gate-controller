@@ -3,8 +3,8 @@ from gate_controller.gate_controller import control_gate, get_status
 import yaml
 import os
 from werkzeug.middleware.proxy_fix import ProxyFix
-from utils.ip_filter import is_ip_allowed
-from utils.config_loader import load_config
+from gate_controller.utils.ip_filter import is_ip_allowed
+from gate_controller.utils.config_loader import load_config
 
 app = Flask(__name__)
 
