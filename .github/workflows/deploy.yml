@@ -10,6 +10,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+      - name: Checkout code
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
       - name: Set up Python
         uses: actions/setup-python@v2
         with:
@@ -41,6 +46,7 @@ jobs:
       - name: Prepare next version
         if: success()
         run: |
+          git fetch --all
           git checkout develop
           python bump_version.py
           NEW_VERSION=$(grep '__version__' version.py | sed -e "s/__version__ = '\(.*\)'/\1/")
