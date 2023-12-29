@@ -24,10 +24,11 @@ jobs:
 
       - name: Upload to Nexus
         env:
+          REPOSITORY_URL: ${{ vars.REPOSITORY_URL }}
           REPOSITORY_USERNAME: ${{ vars.REPOSITORY_USERNAME }}
           REPOSITORY_PASSWORD: ${{ secrets.REPOSITORY_PASSWORD }}
         run: |
-          twine upload --repository-url https://your-nexus-repo/repository/your-repo-name/ -u $REPOSITORY_USERNAME -p $REPOSITORY_PASSWORD dist/*
+          twine upload --repository-url $REPOSITORY_URL -u $REPOSITORY_USERNAME -p $REPOSITORY_PASSWORD dist/*
 
       - name: Tagging
         if: success()
