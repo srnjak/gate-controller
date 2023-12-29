@@ -1,11 +1,8 @@
 from setuptools import setup, find_packages
+from version import __version__
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
-
-# Read version from version.py
-with open('version.py') as f:
-    exec(f.read())
 
 setup(
     name='gate-controller',
@@ -41,5 +38,10 @@ setup(
     package_data={
         '': ['*.yaml', '*.json'],
         'gate_controller': ['static/*.yaml'],
+    },
+    entry_points={
+        'console_scripts': [
+            'gate-controller-server=gate_controller.server:main',
+        ],
     },
 )

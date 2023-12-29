@@ -73,6 +73,9 @@ def get_openapi_spec():
                          {'Content-Type': 'application/x-yaml'})
 
 
+def main():
+    app.run(host=SERVER_HOST_LISTEN, port=SERVER_PORT, debug=DEBUG_MODE)
+
+
 if __name__ == '__main__':
-    port = int(SERVER_PORT)
-    app.run(host=SERVER_HOST_LISTEN, port=port, debug=DEBUG_MODE)
+    main()
