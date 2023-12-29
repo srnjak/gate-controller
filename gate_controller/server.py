@@ -1,5 +1,5 @@
 from flask import Flask, jsonify, request, make_response
-from gate_controller import control_gate, get_status
+from gate_controller.gate_controller import control_gate, get_status
 import yaml
 import os
 from werkzeug.middleware.proxy_fix import ProxyFix
