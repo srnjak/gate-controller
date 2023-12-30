@@ -39,10 +39,10 @@ def generate_openapi_spec(host, api_port):
     return yaml.safe_load(openapi_template.format(host=host, port=api_port))
 
 
-@app.route('/gate/open', methods=['PUT'])
-def open_gate_route():
-    async_control_gate('open')
-    return jsonify({'status': 'Opening gate command sent successfully.'}), 200
+@app.route('/gate/toggle', methods=['PUT'])
+def toggle_gate_route():
+    async_control_gate('toggle')
+    return jsonify({'status': 'Toggling gate command sent successfully.'}), 200
 
 
 @app.route('/gate/close', methods=['PUT'])
@@ -51,17 +51,17 @@ def close_gate_route():
     return jsonify({'status': 'Closing gate command sent successfully.'}), 200
 
 
-@app.route('/gate/stop', methods=['PUT'])
-def stop_gate_route():
-    async_control_gate('stop')
-    return jsonify({'status': 'Stopping gate command sent successfully.'}), 200
+@app.route('/gate/open', methods=['PUT'])
+def open_gate_route():
+    async_control_gate('open')
+    return jsonify({'status': 'Opening gate command sent successfully.'}), 200
 
 
-@app.route('/gate/toggle', methods=['PUT'])
-def toggle_gate_route():
-    async_control_gate('toggle')
+@app.route('/gate/half', methods=['PUT'])
+def half_gate_route():
+    async_control_gate('half')
     return jsonify(
-        {'status': 'Toggling gate action command sent successfully.'}), 200
+        {'status': 'Half open gate command sent successfully.'}), 200
 
 
 @app.route('/gate/status', methods=['GET'])

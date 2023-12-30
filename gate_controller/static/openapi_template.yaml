@@ -39,12 +39,12 @@ paths:
                     type: string
                     example: Closing gate command sent successfully.
 
-  /stop:
+  /half:
     put:
-      summary: "Stop the gate's current action."
+      summary: Half open the gate.
       responses:
         '200':
-          description: Gate stop command has been sent.
+          description: Gate half open command has been sent.
           content:
             application/json:
               schema:
@@ -52,11 +52,11 @@ paths:
                 properties:
                   status:
                     type: string
-                    example: Stopping gate command sent successfully.
+                    example: Half open gate command sent successfully.
 
   /toggle:
     put:
-      summary: "Toggle the gate's next action."
+      summary: Toggle the gate.
       description: Sends a signal to move the gate to the next state in its sequence.
       responses:
         '200':
