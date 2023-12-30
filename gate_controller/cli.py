@@ -3,7 +3,7 @@ from gate_controller.gate_controller import control_gate
 
 
 def cli():
-    valid_actions = ['open', 'close', 'stop', 'toggle']
+    valid_actions = ['toggle', 'close', 'open', 'half']
 
     if len(sys.argv) != 2 or sys.argv[1] not in valid_actions:
         print("Usage: gate-controller <action>")

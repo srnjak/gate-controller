@@ -2,7 +2,7 @@
 
 ## Overview
 The Gate Controller Project is a Python-based application specifically designed for the Raspberry Pi, interfacing with the RPi Relay Board (B) for automated gate control. 
-This project enables automated opening, closing, stopping, and toggling of gate systems using the Raspberry Pi's GPIO pins. 
+This project enables automated opening, closing, half opening, and toggling of gate systems using the Raspberry Pi's GPIO pins. 
 It includes a server component built with Flask, offering a simple API for gate control operations. 
 Tailored for the [Waveshare RPi Relay Board (B)](https://www.waveshare.com/wiki/RPi_Relay_Board_(B)), it ensures seamless integration and functionality.
 
@@ -93,7 +93,7 @@ To control the gate directly (without the server), use the following command:
 gate-controller <action>
 ```
 
-Replace `<action>` with `open`, `close`, `stop`, or `toggle`.
+Replace `<action>` with `open`, `close`, `half`, or `toggle`.
 
 ## API Endpoints
 
@@ -106,11 +106,11 @@ These endpoints are part of the Flask server and are accessible when the server 
 - **Close Gate**:
    - `PUT /gate/close` - Sends a command to close the gate.
 
-- **Stop Gate**:
-   - `PUT /gate/stop` - Stops the gate's current action.
+- **Half Open Gate**:
+   - `PUT /gate/half` - HAlf open the gate.
 
 - **Toggle Gate**:
-   - `PUT /gate/toggle` - Toggles the gate's next action.
+   - `PUT /gate/toggle` - Toggles the gate.
 
 - **Gate Status**:
    - `GET /gate/status` - Retrieves the current status of the gate.
