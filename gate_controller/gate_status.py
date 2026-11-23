@@ -44,6 +44,11 @@ def _is_active(pin):
     return GPIO.input(pin) == GPIO.LOW
 
 
+def is_moving():
+    """Whether the gate drive reports the gate in motion."""
+    return _is_active(MOVING_PIN)
+
+
 def get_status():
     """
     Return the gate position: 'moving', 'closed', 'open' or 'intermediate'.
@@ -52,7 +57,7 @@ def get_status():
     moment after the gate starts to move. 'intermediate' means the gate is at
     rest between the end positions, for example after a half-open command.
     """
-    if _is_active(MOVING_PIN):
+    if is_moving():
         return MOVING
 
     closed = _is_active(CLOSED_PIN)
