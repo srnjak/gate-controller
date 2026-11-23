@@ -15,9 +15,14 @@ PUD_DOWN = 'PUD_DOWN'
 mode_set = None
 warnings_set = False
 
-# Levels returned by input(). A pin not listed here reads HIGH, as an input
-# with the pull-up resistor and nothing pulling it low does.
+# Levels returned by input() while no simulator is attached. A pin not listed
+# here reads HIGH, as an input with the pull-up resistor and nothing pulling it
+# low does.
 input_levels = {}
+
+# A GateSimulator (gate_controller.mocks.gate_simulator) that, once attached,
+# receives every output change and answers every input read.
+simulator = None
 
 # Helper function to print with timestamp
 def print_with_timestamp(message):
@@ -42,10 +47,14 @@ def setup(channel, state, pull_up_down=None):
     print_with_timestamp(f"Setting channel {channel} to {state}{pull}")
 
 def input(channel):
+    if simulator is not None:
+        return simulator.level(channel)
     return input_levels.get(channel, HIGH)
 
 def output(channel, state):
     print_with_timestamp(f"Setting channel {channel} to {state}")
+    if simulator is not None:
+        simulator.on_output(channel, state)
 
 def cleanup():
     print_with_timestamp("Cleaning up GPIO")

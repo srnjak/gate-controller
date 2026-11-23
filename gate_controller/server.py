@@ -7,6 +7,9 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 from threading import Thread
 from gate_controller.utils.ip_filter import is_ip_allowed
 from gate_controller.utils.config_loader import load_config
+from gate_controller import relay_controller
+from gate_controller.mocks import MOCK_GPIO
+from gate_controller.mocks.gate_simulator import attach_simulator
 
 app = Flask(__name__)
 
@@ -81,6 +84,8 @@ def get_openapi_spec():
 
 
 def main():
+    if relay_controller.GPIO is MOCK_GPIO:
+        attach_simulator(config_data.get('simulator', {}))
     app.run(host=SERVER_HOST_LISTEN, port=SERVER_PORT, debug=DEBUG_MODE)
 
 
