@@ -96,6 +96,8 @@ gate-controller <action>
 
 Replace `<action>` with `open`, `close`, `half`, or `toggle`.
 
+The server and the command line record the last state of each relay in `~/.gate_controller/relay_states.json`.
+
 ## API Endpoints
 
 The Gate Control API offers a range of endpoints for controlling the gate and querying its status, as well as accessing the OpenAPI documentation. 
