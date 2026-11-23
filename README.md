@@ -140,7 +140,7 @@ pip uninstall gate-controller
 
 For development without a physical Raspberry Pi, the project includes mock modules in the `mocks` directory. The `MOCK_GPIO.py` file simulates GPIO functionality, enabling testing and development on other systems.
 
-When `RPi.GPIO` is not installed, `gate-controller-server` drives the mock GPIO with a simulated gate. It starts closed; the relay pulses of the gate commands move it, and `GET /gate/status` reports `moving`, `open`, `closed` or `intermediate` with the timing of the real drive. The optional `simulator` configuration section adjusts it:
+When `RPi.GPIO` is not installed, `gate-controller-server` drives the mock GPIO with a simulated gate. It starts closed; the relay pulses of the gate commands move it, any command while it moves stops it as on the real drive, and `GET /gate/status` reports `moving`, `open`, `closed` or `intermediate` with the timing of the real drive. The optional `simulator` configuration section adjusts it:
 
 ```yaml
 simulator:

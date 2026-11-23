@@ -94,15 +94,16 @@ class GateSimulator:
 
     def _command(self, command, now):
         self._advance(now)
-        if command == 'open':
+        if self._target is not None:
+            # Any command while the gate moves stops it where it is, as on
+            # the real drive
+            self._target = None
+        elif command == 'open':
             self._move_to(OPEN_POSITION, now)
         elif command == 'close':
             self._move_to(CLOSED_POSITION, now)
         elif command == 'half':
             self._move_to(self._half_position, now)
-        elif self._target is not None:
-            # toggle while moving: stop where the gate is
-            self._target = None
         elif self._position == CLOSED_POSITION:
             self._move_to(OPEN_POSITION, now)
         elif self._position == OPEN_POSITION:
@@ -113,7 +114,7 @@ class GateSimulator:
             self._move_to(OPEN_POSITION, now)
 
     def _move_to(self, target, now):
-        if self._target is None and self._position == target:
+        if self._position == target:
             return
         self._from_position = self._position
         self._target = target
