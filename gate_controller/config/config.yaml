@@ -39,7 +39,8 @@ status_inputs:
   # Active while the gate is moving (warning light).
   moving: 17
 
-# Seconds after an accepted gate command during which the server rejects
-# further commands from any client with 429 Too Many Requests. 0 turns the
-# limit off. The gate-controller command line is not limited.
+# Minimum seconds between two gate movements, whatever started them: a server
+# command, the gate-controller command line or a remote control. A command
+# that would start a movement sooner is rejected with 429 Too Many Requests.
+# A command that stops a moving gate is never rejected. 0 turns the limit off.
 command_cooldown: 5
