@@ -7,7 +7,7 @@ It includes a server component built with Flask, offering a simple API for gate 
 Tailored for the [Waveshare RPi Relay Board (B)](https://www.waveshare.com/wiki/RPi_Relay_Board_(B)), it ensures seamless integration and functionality.
 
 ## Requirements
-- Python 3.6 or higher
+- Python 3.9 or higher
 - Raspberry Pi with GPIO pins
 - [RPi Relay Board (B)](https://www.waveshare.com/wiki/RPi_Relay_Board_(B)) for relay control
 - Flask for the server component
@@ -42,7 +42,7 @@ Before installing `gate-controller`, you need to configure pip to use the custom
 
 After configuring pip:
 
-1. Ensure Python 3.6+ is installed on your Raspberry Pi.
+1. Ensure Python 3.9+ is installed on your Raspberry Pi.
 
 2. Install the package using pip:
 

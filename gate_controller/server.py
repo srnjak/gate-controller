@@ -1,5 +1,5 @@
-import os
 import yaml
+from importlib.resources import files
 from flask import Flask, jsonify, request, make_response
 from gate_controller.gate_controller import control_gate
 from gate_controller.gate_status import get_status
@@ -35,8 +35,8 @@ def limit_remote_addr():
 
 
 def generate_openapi_spec(host, api_port):
-    with open(os.path.join('static', 'openapi_template.yaml'), 'r') as file:
-        openapi_template = file.read()
+    openapi_template = files('gate_controller').joinpath(
+        'static/openapi_template.yaml').read_text(encoding='utf-8')
     return yaml.safe_load(openapi_template.format(host=host, port=api_port))
 
 
