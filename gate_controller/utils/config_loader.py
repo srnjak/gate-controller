@@ -1,6 +1,6 @@
 import os
 import yaml
-import pkg_resources
+from importlib.resources import files
 
 
 def load_config():
@@ -13,10 +13,8 @@ def load_config():
     ]
 
     # Default configuration (packaged with the application)
-    default_config_path = pkg_resources.resource_filename(
-        'gate_controller', 'config/config.yaml')
-    with open(default_config_path, 'r') as default_config_file:
-        config = yaml.safe_load(default_config_file)
+    default_config = files('gate_controller').joinpath('config/config.yaml')
+    config = yaml.safe_load(default_config.read_text(encoding='utf-8'))
 
     # Override with user-specified configurations
     for path in config_paths:
