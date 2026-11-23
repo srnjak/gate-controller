@@ -94,6 +94,40 @@ paths:
         '429':
           $ref: '#/components/responses/TooManyCommands'
 
+  /gate/stop:
+    post:
+      summary: Stop the gate if it is moving.
+      description: >
+        Pulses the toggle relay only while the gate moves; a stop is never
+        rejected by the movement window and neither starts nor extends it.
+        At rest nothing is sent, so a repeated or late stop cannot move the
+        gate.
+      responses:
+        '200':
+          description: The gate was moving and the relay pulse has been sent.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: Stop gate command sent successfully.
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          description: The gate is not moving. No command was sent.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: The gate is not moving; no command was sent.
+        '500':
+          $ref: '#/components/responses/CommandFailed'
+
   /gate/status:
     get:
       summary: Get the current status of the gate.
@@ -177,9 +211,10 @@ components:
           type: string
           nullable: true
           description: >
-            `command:<name>` when the change follows a relay pulse of this
-            server within 2 seconds, otherwise `external`; null for the state
-            read when the server started.
+            `command:<name>` (`command:stop` for `/gate/stop`) when the
+            change follows a relay pulse of this server within 2 seconds,
+            otherwise `external`; null for the state read when the server
+            started.
           example: command:open
         cooldownUntil:
           type: string

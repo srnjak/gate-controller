@@ -117,6 +117,9 @@ These endpoints are part of the Flask server and are accessible when the server 
 - **Toggle Gate**:
    - `POST /gate/toggle` - Toggles the gate.
 
+- **Stop Gate**:
+   - `POST /gate/stop` - Stops the gate if it is moving; answers `409 Conflict` and sends nothing if it is at rest.
+
 - **Gate Status**:
    - `GET /gate/status` - Retrieves the current status of the gate: `open`, `closed`, `moving`, or `intermediate` (at rest between the end positions).
 
@@ -131,6 +134,8 @@ The server judges a command by the gate state it reads when the command arrives:
 
 - While the gate moves, the drive stops it on any command (`open`, `close`, `half` or `toggle`), so the command is a stop. It is sent at once and never rejected.
 - While the gate is at rest, the command starts a movement. Two movements must be at least `command_cooldown` seconds apart, whatever started them: a server command, the `gate-controller` command line or a remote control seen by the gate monitor. A command that would start a movement sooner is rejected with `429 Too Many Requests` and a `Retry-After` header giving the seconds to wait; a rejected command does not extend the wait. A stop that arrives after the gate has already reached its end position is therefore a movement, and within the window it is rejected instead of moving the gate back.
+
+`POST /gate/stop` is the command for a client that means to stop the gate. It pulses the toggle relay only while the gate moves, is never rejected by the window, and neither starts nor extends it. While the gate is at rest it sends nothing and answers `409 Conflict`, so a repeated or late stop can never move the gate.
 
 The `gate-controller` command line runs in its own process; its commands are not limited, but the movements they start open the window for the server.
 A client whose address is not listed in `allowed_ips` gets `403 Forbidden` from every endpoint.
@@ -147,7 +152,7 @@ data: {"seq": 412, "status": "moving", "direction": "opening", "cause": "command
 - `seq`: increases by one with every event since the server started.
 - `status`: `closed`, `open`, `moving` or `intermediate`, as in `GET /gate/status`.
 - `direction`: while moving, `opening` after the gate left the closed position or after an `open` or `half` command, `closing` after it left the open position or after a `close` command, otherwise `unknown`; `null` while the gate is at rest.
-- `cause`: `command:<name>` when the change follows a relay pulse of this server within 2 seconds, otherwise `external` (a remote control, the command line, or the gate reaching its end position by itself); `null` for the state read when the server started.
+- `cause`: `command:<name>` (`command:stop` for `POST /gate/stop`) when the change follows a relay pulse of this server within 2 seconds, otherwise `external` (a remote control, the command line, or the gate reaching its end position by itself); `null` for the state read when the server started.
 - `cooldownUntil`: from when the next movement will be accepted, or `null` when it would be accepted now.
 - `at`: when the change was first seen.
 

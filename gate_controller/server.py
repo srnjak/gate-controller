@@ -102,6 +102,19 @@ def half_gate_route():
     return run_command('half', 'Half open gate command sent successfully.')
 
 
+@app.route('/gate/stop', methods=['POST'])
+def stop_gate_route():
+    # Unlike the other commands, a stop never starts a movement: at rest it
+    # sends nothing, and it does not touch the movement window
+    with command_lock:
+        if not is_moving():
+            return jsonify({'status': 'The gate is not moving; '
+                                      'no command was sent.'}), 409
+        gate_monitor.note_command('stop')
+        control_gate('toggle')
+    return jsonify({'status': 'Stop gate command sent successfully.'}), 200
+
+
 @app.route('/gate/status', methods=['GET'])
 def gate_status_route():
     status = get_status()
