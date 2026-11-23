@@ -24,6 +24,8 @@ def load_config():
             with open(path, 'r') as user_config_file:
                 user_config = yaml.safe_load(user_config_file)
 
+            # An empty file (or one with only comments) sets no options
+            if user_config is not None:
                 # Update default config with user-specified values
                 config.update(user_config)
 
