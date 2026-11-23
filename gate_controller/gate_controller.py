@@ -21,8 +21,3 @@ def control_gate(command):
         control_relay(relay_index, 'off')  # Turn the relay off
     else:
         raise ValueError("Invalid command received")
-
-
-def get_status():
-    # TODO Placeholder for gate status retrieval logic
-    return 'unknown'
