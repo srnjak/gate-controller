@@ -5,16 +5,16 @@ info:
   description: API for controlling and querying the status of a gate.
 
 servers:
-  - url: http://{host}:{port}/gate
+  - url: http://{host}:{port}
     description: Gate Control Server
 
 paths:
-  /open:
-    put:
+  /gate/open:
+    post:
       summary: Open the gate.
       responses:
         '200':
-          description: Gate opening command has been sent.
+          description: The relay pulse has been sent to the gate drive.
           content:
             application/json:
               schema:
@@ -23,13 +23,19 @@ paths:
                   status:
                     type: string
                     example: Opening gate command sent successfully.
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/CommandFailed'
+        '429':
+          $ref: '#/components/responses/TooManyCommands'
 
-  /close:
-    put:
+  /gate/close:
+    post:
       summary: Close the gate.
       responses:
         '200':
-          description: Gate closing command has been sent.
+          description: The relay pulse has been sent to the gate drive.
           content:
             application/json:
               schema:
@@ -38,13 +44,19 @@ paths:
                   status:
                     type: string
                     example: Closing gate command sent successfully.
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/CommandFailed'
+        '429':
+          $ref: '#/components/responses/TooManyCommands'
 
-  /half:
-    put:
+  /gate/half:
+    post:
       summary: Half open the gate.
       responses:
         '200':
-          description: Gate half open command has been sent.
+          description: The relay pulse has been sent to the gate drive.
           content:
             application/json:
               schema:
@@ -53,14 +65,20 @@ paths:
                   status:
                     type: string
                     example: Half open gate command sent successfully.
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/CommandFailed'
+        '429':
+          $ref: '#/components/responses/TooManyCommands'
 
-  /toggle:
-    put:
+  /gate/toggle:
+    post:
       summary: Toggle the gate.
       description: Sends a signal to move the gate to the next state in its sequence.
       responses:
         '200':
-          description: Gate toggle command has been sent.
+          description: The relay pulse has been sent to the gate drive.
           content:
             application/json:
               schema:
@@ -68,11 +86,21 @@ paths:
                 properties:
                   status:
                     type: string
-                    example: Toggling gate action command sent successfully.
+                    example: Toggling gate command sent successfully.
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/CommandFailed'
+        '429':
+          $ref: '#/components/responses/TooManyCommands'
 
-  /status:
+  /gate/status:
     get:
       summary: Get the current status of the gate.
+      description: >
+        Reads the gate drive's status signals. `moving` while the gate is in
+        motion, `closed` or `open` in an end position, and `intermediate`
+        while the gate stands between the end positions.
       responses:
         '200':
           description: The current status of the gate.
@@ -83,4 +111,57 @@ paths:
                 properties:
                   status:
                     type: string
-                    example: Gate is currently closed.
+                    enum: [open, closed, moving, intermediate]
+                    example: closed
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          description: >
+            The status signals report a combination the gate cannot be in,
+            such as both end positions at once.
+
+  /openapi:
+    get:
+      summary: Get this OpenAPI document.
+      responses:
+        '200':
+          description: The OpenAPI document of the Gate Control API.
+          content:
+            application/x-yaml:
+              schema:
+                type: string
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+components:
+  responses:
+    Forbidden:
+      description: The client address is not listed in `allowed_ips`.
+      content:
+        text/html:
+          schema:
+            type: string
+            example: Forbidden
+    CommandFailed:
+      description: >
+        Switching the relay or recording its state failed. The pulse may
+        still have reached the gate drive, so read `/gate/status` before
+        sending the command again.
+    TooManyCommands:
+      description: >
+        Another gate command was accepted less than `command_cooldown`
+        seconds ago, from this or another client. The command was not sent.
+      headers:
+        Retry-After:
+          description: Seconds to wait before the next command is accepted.
+          schema:
+            type: integer
+            minimum: 1
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              status:
+                type: string
+                example: Too soon after the previous gate command; retry in 3 s.

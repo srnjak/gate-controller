@@ -1,11 +1,15 @@
-import os
 import yaml
+from importlib.resources import files
 from flask import Flask, jsonify, request, make_response
-from gate_controller.gate_controller import control_gate, get_status
+from gate_controller.gate_controller import control_gate
+from gate_controller.utils.command_cooldown import CommandCooldown
+from gate_controller.gate_status import get_status
 from werkzeug.middleware.proxy_fix import ProxyFix
-from threading import Thread
 from gate_controller.utils.ip_filter import is_ip_allowed
 from gate_controller.utils.config_loader import load_config
+from gate_controller import relay_controller
+from gate_controller.mocks import MOCK_GPIO
+from gate_controller.mocks.gate_simulator import attach_simulator
 
 app = Flask(__name__)
 
@@ -16,52 +20,67 @@ config_data = load_config()
 SERVER_HOST_LISTEN = config_data.get('host_listen', '0.0.0.0')
 SERVER_PORT = int(config_data.get('port', 5000))
 DEBUG_MODE = config_data.get('debug', False)
+TRUSTED_PROXIES = int(config_data.get('trusted_proxies', 0))
 
-# Configure the application to handle proxy headers for correct IP handling
-app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1)
+if TRUSTED_PROXIES < 0:
+    raise ValueError(
+        f'trusted_proxies must not be negative, got {TRUSTED_PROXIES}')
 
-
-def async_control_gate(action):
-    """Function to run control_gate() in a separate thread."""
-    Thread(target=control_gate, args=(action,)).start()
+# Take the client address from the X-Forwarded-* headers only when they are
+# set by trusted reverse proxies; a client could forge them otherwise
+if TRUSTED_PROXIES > 0:
+    app.wsgi_app = ProxyFix(app.wsgi_app,
+                            x_for=TRUSTED_PROXIES, x_proto=TRUSTED_PROXIES)
 
 
 # Custom middleware to filter requests based on allowed IPs
 @app.before_request
 def limit_remote_addr():
     if not is_ip_allowed():
-        return "Unauthorized", 401
+        return "Forbidden", 403
 
 
 def generate_openapi_spec(host, api_port):
-    with open(os.path.join('static', 'openapi_template.yaml'), 'r') as file:
-        openapi_template = file.read()
+    openapi_template = files('gate_controller').joinpath(
+        'static/openapi_template.yaml').read_text(encoding='utf-8')
     return yaml.safe_load(openapi_template.format(host=host, port=api_port))
 
 
-@app.route('/gate/toggle', methods=['PUT'])
+# A command from any client that arrives within this many seconds after the
+# previous accepted command is rejected; the CLI is not covered
+command_cooldown = CommandCooldown(
+    float(config_data.get('command_cooldown', 5)))
+
+
+def run_command(command, message):
+    retry_after = command_cooldown.try_accept()
+    if retry_after is not None:
+        response = jsonify({'status': 'Too soon after the previous gate '
+                                      f'command; retry in {retry_after} s.'})
+        response.headers['Retry-After'] = str(retry_after)
+        return response, 429
+    control_gate(command)
+    return jsonify({'status': message}), 200
+
+
+@app.route('/gate/toggle', methods=['POST'])
 def toggle_gate_route():
-    async_control_gate('toggle')
-    return jsonify({'status': 'Toggling gate command sent successfully.'}), 200
+    return run_command('toggle', 'Toggling gate command sent successfully.')
 
 
-@app.route('/gate/close', methods=['PUT'])
+@app.route('/gate/close', methods=['POST'])
 def close_gate_route():
-    async_control_gate('close')
-    return jsonify({'status': 'Closing gate command sent successfully.'}), 200
+    return run_command('close', 'Closing gate command sent successfully.')
 
 
-@app.route('/gate/open', methods=['PUT'])
+@app.route('/gate/open', methods=['POST'])
 def open_gate_route():
-    async_control_gate('open')
-    return jsonify({'status': 'Opening gate command sent successfully.'}), 200
+    return run_command('open', 'Opening gate command sent successfully.')
 
 
-@app.route('/gate/half', methods=['PUT'])
+@app.route('/gate/half', methods=['POST'])
 def half_gate_route():
-    async_control_gate('half')
-    return jsonify(
-        {'status': 'Half open gate command sent successfully.'}), 200
+    return run_command('half', 'Half open gate command sent successfully.')
 
 
 @app.route('/gate/status', methods=['GET'])
@@ -80,6 +99,8 @@ def get_openapi_spec():
 
 
 def main():
+    if relay_controller.GPIO is MOCK_GPIO:
+        attach_simulator(config_data.get('simulator', {}))
     app.run(host=SERVER_HOST_LISTEN, port=SERVER_PORT, debug=DEBUG_MODE)
 
 

@@ -8,15 +8,17 @@ except ImportError:
 
 import json
 import os
+import tempfile
+import threading
 
 # Define the relay pins
 Relay = [5, 6, 13, 16, 19, 20, 21, 26]
 
-# File to store relay states
-runtime_data_dir = "runtime_data"
-if not os.path.exists(runtime_data_dir):
-    os.makedirs(runtime_data_dir)
-state_file = "runtime_data/relay_states.json"
+# File to store relay states, next to the user configuration
+state_file = os.path.expanduser('~/.gate_controller/relay_states.json')
+
+# Serialises the read-modify-write of the state file between threads
+state_lock = threading.Lock()
 
 
 def initialize_gpio():
@@ -40,26 +42,35 @@ def read_relay_states():
             data = json.load(file)
             return data.get("relays", {})
     except FileNotFoundError:
-        # Initialize file with all relays off if it doesn't exist
-        init_state = {"relays": {str(i): "off" for i in range(8)}}
-        with open(state_file, "w") as file:
-            json.dump(init_state, file, indent=4)
-        return init_state["relays"]
+        # Nothing recorded yet: all relays are off
+        return {str(i): "off" for i in range(8)}
 
 
 # Function to write relay states to the file
 def write_relay_states(states):
-    with open(state_file, "w") as file:
-        json.dump({"relays": states}, file, indent=4)
+    # Write a temporary file and rename it over the state file, so that a
+    # reader never sees a partially written file
+    state_dir = os.path.dirname(state_file)
+    os.makedirs(state_dir, exist_ok=True)
+    fd, temp_path = tempfile.mkstemp(dir=state_dir, suffix='.tmp')
+    try:
+        with os.fdopen(fd, "w") as file:
+            json.dump({"relays": states}, file, indent=4)
+        os.replace(temp_path, state_file)
+    except BaseException:
+        os.unlink(temp_path)
+        raise
 
 
 # Function to control a relay
 def control_relay(relay_index, state):
-    states = read_relay_states()
-    states[str(relay_index)] = state
-    write_relay_states(states)
-    # Apply the new state to the relay
+    # Apply the new state to the relay first, so that a failure to record
+    # it cannot leave the relay in its previous state
     GPIO.output(Relay[relay_index], GPIO.LOW if state == "on" else GPIO.HIGH)
+    with state_lock:
+        states = read_relay_states()
+        states[str(relay_index)] = state
+        write_relay_states(states)
 
 
 # Function to apply relay states from the file
