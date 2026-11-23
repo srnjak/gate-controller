@@ -21,3 +21,14 @@ debug: false
 allowed_ips:
   - 127.0.0.1
   - 192.168.0.0/24
+
+# GPIO inputs (BCM numbering) wired to the gate drive's status outputs.
+# Each output is a contact that connects the input to GND while the signal
+# is active; the inputs use the internal pull-up resistor.
+status_inputs:
+  # Active while the gate is in the closed end position.
+  closed: 27
+  # Active while the gate is in the open end position.
+  open: 22
+  # Active while the gate is moving (warning light).
+  moving: 17

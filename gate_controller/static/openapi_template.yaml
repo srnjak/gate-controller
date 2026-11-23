@@ -73,6 +73,10 @@ paths:
   /status:
     get:
       summary: Get the current status of the gate.
+      description: >
+        Reads the gate drive's status signals. `moving` while the gate is in
+        motion, `closed` or `open` in an end position, and `intermediate`
+        while the gate stands between the end positions.
       responses:
         '200':
           description: The current status of the gate.
@@ -83,4 +87,5 @@ paths:
                 properties:
                   status:
                     type: string
-                    example: Gate is currently closed.
+                    enum: [open, closed, moving, intermediate]
+                    example: closed

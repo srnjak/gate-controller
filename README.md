@@ -62,6 +62,7 @@ The `gate-controller` uses a `config.yaml` file for configuration. Customize the
 | `port`        | `5000`                           | The port number on which the server will listen.                                                          | To change the port, set to any valid port number, like `8080`.                                                      |
 | `debug`       | `false`                          | Enables or disables debug mode. Useful for development.                                                   | Set to `true` for development to enable debug mode.                                                                 |
 | `allowed_ips` | `['127.0.0.1','192.168.0.0/24']` | A list of IP addresses or subnets in CIDR notation that are allowed to access the server.                 | To allow only a specific IP, set to `['192.168.0.5']`. For two subnets, set to `['192.168.0.0/24', '10.0.0.0/24']`. |
+| `status_inputs` | `{closed: 27, open: 22, moving: 17}` | GPIO inputs (BCM numbering) wired to the gate drive's status outputs. Each output must connect its input to GND while the signal is active; the inputs use the internal pull-up resistor. | To read the closed end position from GPIO 23, set `closed: 23`. The whole mapping is replaced, so list all three keys. |
 
 ### Customizing the Configuration
 
@@ -113,7 +114,7 @@ These endpoints are part of the Flask server and are accessible when the server 
    - `PUT /gate/toggle` - Toggles the gate.
 
 - **Gate Status**:
-   - `GET /gate/status` - Retrieves the current status of the gate.
+   - `GET /gate/status` - Retrieves the current status of the gate: `open`, `closed`, `moving`, or `intermediate` (at rest between the end positions).
 
 - **OpenAPI Documentation**:
    - `GET /openapi` - Retrieves the OpenAPI documentation for the Gate Control API.

@@ -1,7 +1,8 @@
 import os
 import yaml
 from flask import Flask, jsonify, request, make_response
-from gate_controller.gate_controller import control_gate, get_status
+from gate_controller.gate_controller import control_gate
+from gate_controller.gate_status import get_status
 from werkzeug.middleware.proxy_fix import ProxyFix
 from threading import Thread
 from gate_controller.utils.ip_filter import is_ip_allowed
