@@ -17,9 +17,17 @@ config_data = load_config()
 SERVER_HOST_LISTEN = config_data.get('host_listen', '0.0.0.0')
 SERVER_PORT = int(config_data.get('port', 5000))
 DEBUG_MODE = config_data.get('debug', False)
+TRUSTED_PROXIES = int(config_data.get('trusted_proxies', 0))
 
-# Configure the application to handle proxy headers for correct IP handling
-app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1)
+if TRUSTED_PROXIES < 0:
+    raise ValueError(
+        f'trusted_proxies must not be negative, got {TRUSTED_PROXIES}')
+
+# Take the client address from the X-Forwarded-* headers only when they are
+# set by trusted reverse proxies; a client could forge them otherwise
+if TRUSTED_PROXIES > 0:
+    app.wsgi_app = ProxyFix(app.wsgi_app,
+                            x_for=TRUSTED_PROXIES, x_proto=TRUSTED_PROXIES)
 
 
 def async_control_gate(action):

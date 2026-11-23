@@ -22,6 +22,12 @@ allowed_ips:
   - 127.0.0.1
   - 192.168.0.0/24
 
+# Number of reverse proxies in front of the server. The client address checked
+# against allowed_ips is taken from the X-Forwarded-For header set by these
+# proxies. Leave at 0 when clients connect to the server directly; otherwise
+# any client could choose its own address with that header.
+trusted_proxies: 0
+
 # GPIO inputs (BCM numbering) wired to the gate drive's status outputs.
 # Each output is a contact that connects the input to GND while the signal
 # is active; the inputs use the internal pull-up resistor.
