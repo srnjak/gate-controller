@@ -38,3 +38,8 @@ status_inputs:
   open: 22
   # Active while the gate is moving (warning light).
   moving: 17
+
+# Seconds after an accepted gate command during which the server rejects
+# further commands from any client with 429 Too Many Requests. 0 turns the
+# limit off. The gate-controller command line is not limited.
+command_cooldown: 5

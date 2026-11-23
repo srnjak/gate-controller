@@ -64,6 +64,7 @@ The `gate-controller` uses a `config.yaml` file for configuration. Customize the
 | `allowed_ips` | `['127.0.0.1','192.168.0.0/24']` | A list of IP addresses or subnets in CIDR notation that are allowed to access the server.                 | To allow only a specific IP, set to `['192.168.0.5']`. For two subnets, set to `['192.168.0.0/24', '10.0.0.0/24']`. |
 | `trusted_proxies` | `0` | Number of reverse proxies in front of the server. With a value above `0`, the client address checked against `allowed_ips` is taken from the `X-Forwarded-For` header those proxies set. Keep `0` when clients connect directly, or any client can choose its own address with that header. | Behind a single nginx, set to `1`. |
 | `status_inputs` | `{closed: 27, open: 22, moving: 17}` | GPIO inputs (BCM numbering) wired to the gate drive's status outputs. Each output must connect its input to GND while the signal is active; the inputs use the internal pull-up resistor. | To read the closed end position from GPIO 23, set `closed: 23`. The whole mapping is replaced, so list all three keys. |
+| `command_cooldown` | `5` | Seconds after an accepted gate command during which the server rejects further commands from any client with `429 Too Many Requests`. `0` turns the limit off. | To allow a command every 10 seconds, set to `10`. |
 
 ### Customizing the Configuration
 
@@ -105,22 +106,26 @@ The Gate Control API offers a range of endpoints for controlling the gate and qu
 These endpoints are part of the Flask server and are accessible when the server is running:
 
 - **Open Gate**:
-   - `PUT /gate/open` - Sends a command to open the gate.
+   - `POST /gate/open` - Sends a command to open the gate.
 
 - **Close Gate**:
-   - `PUT /gate/close` - Sends a command to close the gate.
+   - `POST /gate/close` - Sends a command to close the gate.
 
 - **Half Open Gate**:
-   - `PUT /gate/half` - HAlf open the gate.
+   - `POST /gate/half` - Half opens the gate.
 
 - **Toggle Gate**:
-   - `PUT /gate/toggle` - Toggles the gate.
+   - `POST /gate/toggle` - Toggles the gate.
 
 - **Gate Status**:
    - `GET /gate/status` - Retrieves the current status of the gate: `open`, `closed`, `moving`, or `intermediate` (at rest between the end positions).
 
 - **OpenAPI Documentation**:
    - `GET /openapi` - Retrieves the OpenAPI documentation for the Gate Control API.
+
+A command answers `200` once the relay pulse has been sent, and `500` if switching the relay or recording its state failed; the pulse may still have reached the gate drive, so check `GET /gate/status` before repeating the command.
+A command that arrives within `command_cooldown` seconds after the previous accepted command, from any client, is rejected with `429 Too Many Requests` and a `Retry-After` header giving the seconds to wait; a rejected command does not extend the wait. The `gate-controller` command line runs in its own process and is not subject to this limit.
+A client whose address is not listed in `allowed_ips` gets `403 Forbidden` from every endpoint.
 
 
 ## Uninstallation
