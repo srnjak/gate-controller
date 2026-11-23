@@ -120,6 +120,26 @@ paths:
             The status signals report a combination the gate cannot be in,
             such as both end positions at once.
 
+  /gate/events:
+    get:
+      summary: Stream every change of the gate state.
+      description: >
+        A server-sent event stream. The current state is sent on connect,
+        then every accepted change of the status inputs, including movements
+        started by a remote control; a heartbeat comment line follows every
+        15 seconds while nothing changes. A `gate` event carries the state
+        below; when both end position signals are active, an `error` event
+        carries `seq`, `error`, `cooldownUntil` and `at` instead.
+      responses:
+        '200':
+          description: The event stream.
+          content:
+            text/event-stream:
+              schema:
+                $ref: '#/components/schemas/GateEvent'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
   /openapi:
     get:
       summary: Get this OpenAPI document.
@@ -134,6 +154,46 @@ paths:
           $ref: '#/components/responses/Forbidden'
 
 components:
+  schemas:
+    GateEvent:
+      type: object
+      description: The data of a `gate` event.
+      properties:
+        seq:
+          type: integer
+          description: Increases by one with every event since the server started.
+          example: 412
+        status:
+          type: string
+          enum: [open, closed, moving, intermediate]
+          example: moving
+        direction:
+          type: string
+          nullable: true
+          enum: [opening, closing, unknown]
+          description: The direction while moving, null while at rest.
+          example: opening
+        cause:
+          type: string
+          nullable: true
+          description: >
+            `command:<name>` when the change follows a relay pulse of this
+            server within 2 seconds, otherwise `external`; null for the state
+            read when the server started.
+          example: command:open
+        cooldownUntil:
+          type: string
+          format: date-time
+          nullable: true
+          description: >
+            From when the next movement will be accepted, or null when it
+            would be accepted now.
+          example: '2026-11-23T18:04:16Z'
+        at:
+          type: string
+          format: date-time
+          description: When the change was first seen.
+          example: '2026-11-23T18:04:11Z'
   responses:
     Forbidden:
       description: The client address is not listed in `allowed_ips`.
@@ -149,8 +209,9 @@ components:
         sending the command again.
     TooManyCommands:
       description: >
-        Another gate command was accepted less than `command_cooldown`
-        seconds ago, from this or another client. The command was not sent.
+        The gate is at rest and another movement started less than
+        `command_cooldown` seconds ago, whatever started it. The command was
+        not sent. A command that stops a moving gate is never rejected.
       headers:
         Retry-After:
           description: Seconds to wait before the next command is accepted.
@@ -164,4 +225,4 @@ components:
             properties:
               status:
                 type: string
-                example: Too soon after the previous gate command; retry in 3 s.
+                example: Too soon after the previous gate movement; retry in 3 s.

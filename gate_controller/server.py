@@ -1,9 +1,13 @@
+import json
+import queue
+import threading
 import yaml
 from importlib.resources import files
-from flask import Flask, jsonify, request, make_response
+from flask import Flask, Response, jsonify, request, make_response
 from gate_controller.gate_controller import control_gate
-from gate_controller.utils.command_cooldown import CommandCooldown
-from gate_controller.gate_status import get_status
+from gate_controller.gate_monitor import GateMonitor, STOPPED
+from gate_controller.utils.movement_window import MovementWindow
+from gate_controller.gate_status import get_status, is_moving
 from werkzeug.middleware.proxy_fix import ProxyFix
 from gate_controller.utils.ip_filter import is_ip_allowed
 from gate_controller.utils.config_loader import load_config
@@ -46,20 +50,35 @@ def generate_openapi_spec(host, api_port):
     return yaml.safe_load(openapi_template.format(host=host, port=api_port))
 
 
-# A command from any client that arrives within this many seconds after the
-# previous accepted command is rejected; the CLI is not covered
-command_cooldown = CommandCooldown(
+# Gate movements must be at least this many seconds apart, whether a client,
+# the command line or a remote control started them
+movement_window = MovementWindow(
     float(config_data.get('command_cooldown', 5)))
+
+gate_monitor = GateMonitor(movement_window)
+
+# Seconds between heartbeat comments on an idle event stream
+HEARTBEAT_INTERVAL = 15
+
+# One command at a time: each is judged by the gate state left by the
+# previous one
+command_lock = threading.Lock()
 
 
 def run_command(command, message):
-    retry_after = command_cooldown.try_accept()
-    if retry_after is not None:
-        response = jsonify({'status': 'Too soon after the previous gate '
-                                      f'command; retry in {retry_after} s.'})
-        response.headers['Retry-After'] = str(retry_after)
-        return response, 429
-    control_gate(command)
+    with command_lock:
+        # While the gate moves, any command stops it, and a stop is never
+        # refused; at rest, the command starts a movement
+        if not is_moving():
+            retry_after = movement_window.try_start()
+            if retry_after is not None:
+                response = jsonify({
+                    'status': 'Too soon after the previous gate movement; '
+                              f'retry in {retry_after} s.'})
+                response.headers['Retry-After'] = str(retry_after)
+                return response, 429
+        gate_monitor.note_command(command)
+        control_gate(command)
     return jsonify({'status': message}), 200
 
 
@@ -89,6 +108,29 @@ def gate_status_route():
     return jsonify({'status': status}), 200
 
 
+@app.route('/gate/events', methods=['GET'])
+def gate_events_route():
+    subscriber = gate_monitor.subscribe()
+
+    def stream():
+        try:
+            while True:
+                try:
+                    event = subscriber.get(timeout=HEARTBEAT_INTERVAL)
+                except queue.Empty:
+                    yield ': heartbeat\n\n'
+                    continue
+                if event is STOPPED:
+                    return
+                yield (f'event: {event.name}\n'
+                       f'data: {json.dumps(event.data)}\n\n')
+        finally:
+            gate_monitor.unsubscribe(subscriber)
+
+    return Response(stream(), mimetype='text/event-stream',
+                    headers={'Cache-Control': 'no-cache'})
+
+
 @app.route('/openapi', methods=['GET'])
 def get_openapi_spec():
     host = request.host.split(':')[0]  # Extracts the hostname
@@ -101,7 +143,10 @@ def get_openapi_spec():
 def main():
     if relay_controller.GPIO is MOCK_GPIO:
         attach_simulator(config_data.get('simulator', {}))
-    app.run(host=SERVER_HOST_LISTEN, port=SERVER_PORT, debug=DEBUG_MODE)
+    gate_monitor.start()
+    # Each event stream holds a thread for as long as its client is connected
+    app.run(host=SERVER_HOST_LISTEN, port=SERVER_PORT, debug=DEBUG_MODE,
+            threaded=True)
 
 
 if __name__ == '__main__':
