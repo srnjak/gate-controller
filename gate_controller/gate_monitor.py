@@ -14,7 +14,7 @@ import time
 from datetime import datetime, timezone
 
 from gate_controller.gate_status import (
-    CLOSED, GateSignalError, MOVING, OPEN, get_status)
+    CLOSED, GateSignalError, MOVING, OPEN, read_state)
 
 # How often the status inputs are read
 POLL_INTERVAL = 0.05
@@ -52,17 +52,18 @@ class GateEvent:
 
 class GateMonitor:
 
-    def __init__(self, movement_window, read_status=get_status,
+    def __init__(self, movement_window, read_state=read_state,
                  clock=time.monotonic, wall_clock=time.time,
                  poll_interval=POLL_INTERVAL, stable_time=STABLE_TIME):
         """
         :param movement_window: a MovementWindow; a movement the controller
             did not start opens a new window, and every event reports when
             the window ends
-        :param read_status: returns the gate status or raises GateSignalError
+        :param read_state: returns the gate status and its basis, or raises
+            GateSignalError
         """
         self._movement_window = movement_window
-        self._read_status = read_status
+        self._read_state = read_state
         self._clock = clock
         self._wall_clock = wall_clock
         self._poll_interval = poll_interval
@@ -146,9 +147,9 @@ class GateMonitor:
             raise
 
     def _read(self):
-        """A reading: ('gate', status) or ('error', message)."""
+        """A reading: ('gate', status, basis) or ('error', message)."""
         try:
-            return 'gate', self._read_status()
+            return ('gate',) + tuple(self._read_state())
         except GateSignalError as error:
             return 'error', str(error)
 
@@ -158,17 +159,18 @@ class GateMonitor:
         self._accepted = reading
         self._candidate = None
 
-        kind, value = reading
+        kind, value = reading[:2]
         if kind == 'error':
             data = {'seq': next(self._seq), 'error': value}
         else:
+            basis = reading[2]
             cause = None if since is None else self._cause(since)
             direction = None
             if value == MOVING:
                 direction = self._direction(previous, cause)
                 if cause == 'external':
                     self._movement_window.record()
-            data = {'seq': next(self._seq), 'status': value,
+            data = {'seq': next(self._seq), 'status': value, 'basis': basis,
                     'direction': direction, 'cause': cause}
         until = self._movement_window.until()
         data['cooldownUntil'] = None if until is None else format_time(
@@ -189,6 +191,7 @@ class GateMonitor:
 
     @staticmethod
     def _direction(previous, cause):
+        previous = None if previous is None else previous[:2]
         if previous == ('gate', CLOSED):
             return OPENING
         if previous == ('gate', OPEN):
