@@ -7,7 +7,8 @@ from flask import Flask, Response, jsonify, request, make_response
 from gate_controller.gate_controller import control_gate
 from gate_controller.gate_monitor import GateMonitor, STOPPED
 from gate_controller.utils.movement_window import MovementWindow
-from gate_controller.gate_status import get_status, is_moving
+from gate_controller.gate_status import (
+    is_moving, note_movement, note_stop, read_state)
 from werkzeug.middleware.proxy_fix import ProxyFix
 from gate_controller.utils.ip_filter import is_ip_allowed
 from gate_controller.utils.config_loader import load_config
@@ -69,7 +70,8 @@ def run_command(command, message):
     with command_lock:
         # While the gate moves, any command stops it, and a stop is never
         # refused; at rest, the command starts a movement
-        if not is_moving():
+        stop = is_moving()
+        if not stop:
             retry_after = movement_window.try_start()
             if retry_after is not None:
                 response = jsonify({
@@ -79,6 +81,10 @@ def run_command(command, message):
                 return response, 429
         gate_monitor.note_command(command)
         control_gate(command)
+        if stop:
+            note_stop()
+        else:
+            note_movement()
     return jsonify({'status': message}), 200
 
 
@@ -112,13 +118,14 @@ def stop_gate_route():
                                       'no command was sent.'}), 409
         gate_monitor.note_command('stop')
         control_gate('toggle')
+        note_stop()
     return jsonify({'status': 'Stop gate command sent successfully.'}), 200
 
 
 @app.route('/gate/status', methods=['GET'])
 def gate_status_route():
-    status = get_status()
-    return jsonify({'status': status}), 200
+    status, basis = read_state()
+    return jsonify({'status': status, 'basis': basis}), 200
 
 
 @app.route('/gate/events', methods=['GET'])

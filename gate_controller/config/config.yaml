@@ -36,8 +36,14 @@ status_inputs:
   closed: 27
   # Active while the gate is in the open end position.
   open: 22
-  # Active while the gate is moving (warning light).
+  # Active while the gate is moving (the warning lamp output). It stays active
+  # while the gate stands stopped part way, until a movement ends.
   moving: 17
+
+# Seconds after which an active moving signal is taken for a gate at rest,
+# for example one stopped part way by a remote control. Set it somewhat
+# longer than a full travel between the end positions.
+max_travel_time: 35
 
 # Minimum seconds between two gate movements, whatever started them: a server
 # command, the gate-controller command line or a remote control. A command
