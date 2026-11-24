@@ -64,6 +64,7 @@ The `gate-controller` uses a `config.yaml` file for configuration. Customize the
 | `allowed_ips` | `['127.0.0.1','192.168.0.0/24']` | A list of IP addresses or subnets in CIDR notation that are allowed to access the server.                 | To allow only a specific IP, set to `['192.168.0.5']`. For two subnets, set to `['192.168.0.0/24', '10.0.0.0/24']`. |
 | `trusted_proxies` | `0` | Number of reverse proxies in front of the server. With a value above `0`, the client address checked against `allowed_ips` is taken from the `X-Forwarded-For` header those proxies set. Keep `0` when clients connect directly, or any client can choose its own address with that header. | Behind a single nginx, set to `1`. |
 | `status_inputs` | `{closed: 27, open: 22, moving: 17}` | GPIO inputs (BCM numbering) wired to the gate drive's status outputs. Each output must connect its input to GND while the signal is active; the inputs use the internal pull-up resistor. | To read the closed end position from GPIO 23, set `closed: 23`. The whole mapping is replaced, so list all three keys. |
+| `max_travel_time` | `35` | Seconds after which an active moving signal is taken for a gate at rest (`basis: timeout`), for example one stopped part way by a remote control. Set it somewhat longer than a full travel between the end positions. | For a gate that takes 40 seconds to open, set to `45`. |
 | `command_cooldown` | `5` | Minimum seconds between two gate movements, whatever started them. A command that would start a movement sooner is rejected with `429 Too Many Requests`; a command that stops a moving gate is never rejected. `0` turns the limit off. | To allow a movement every 10 seconds, set to `10`. |
 
 ### Customizing the Configuration
@@ -121,7 +122,7 @@ These endpoints are part of the Flask server and are accessible when the server 
    - `POST /gate/stop` - Stops the gate if it is moving; answers `409 Conflict` and sends nothing if it is at rest.
 
 - **Gate Status**:
-   - `GET /gate/status` - Retrieves the current status of the gate: `open`, `closed`, `moving`, or `intermediate` (at rest between the end positions).
+   - `GET /gate/status` - Retrieves the current status of the gate: `open`, `closed`, `moving`, or `intermediate` (at rest between the end positions), and `basis`, what the status rests on: `signals`, `stop` or `timeout` (see below).
 
 - **Gate Events**:
    - `GET /gate/events` - Streams every change of the gate state as server-sent events (see below).
@@ -137,6 +138,13 @@ The server judges a command by the gate state it reads when the command arrives:
 
 `POST /gate/stop` is the command for a client that means to stop the gate. It pulses the toggle relay only while the gate moves, is never rejected by the window, and neither starts nor extends it. While the gate is at rest it sends nothing and answers `409 Conflict`, so a repeated or late stop can never move the gate.
 
+The moving input is wired to the drive's relay output for the warning lamp, which stays active while the gate stands stopped part way, until a movement ends at its target. The input alone cannot tell such a gate from a moving one, so the server reports a gate at rest in two more cases, and says so in `basis`:
+
+- `stop`: the server stopped the gate itself. It reports `intermediate` until the output goes off or the server starts a movement.
+- `timeout`: the output has been active for longer than `max_travel_time`, so the gate is assumed at rest, for example after a remote control stopped it. This is an assumption: a movement that takes longer, such as one reversed by an obstacle, is reported at rest before it ends.
+
+`basis` is `signals` whenever the status is read from the inputs alone. A `moving` gate may still have been stopped by a remote control or the command line, which the server cannot see until `max_travel_time` has passed; within that time `POST /gate/stop` would start it again. Likewise, a gate the server has stopped and a remote control then starts is reported `intermediate` until the movement ends. The record of a stop is kept in memory, so after a restart a gate stopped part way is reported `moving` until `max_travel_time` has passed.
+
 The `gate-controller` command line runs in its own process; its commands are not limited, but the movements they start open the window for the server.
 A client whose address is not listed in `allowed_ips` gets `403 Forbidden` from every endpoint.
 
@@ -146,11 +154,12 @@ A client whose address is not listed in `allowed_ips` gets `403 Forbidden` from 
 
 ```
 event: gate
-data: {"seq": 412, "status": "moving", "direction": "opening", "cause": "command:open", "cooldownUntil": "2026-11-23T18:04:16Z", "at": "2026-11-23T18:04:11Z"}
+data: {"seq": 412, "status": "moving", "basis": "signals", "direction": "opening", "cause": "command:open", "cooldownUntil": "2026-11-23T18:04:16Z", "at": "2026-11-23T18:04:11Z"}
 ```
 
 - `seq`: increases by one with every event since the server started.
 - `status`: `closed`, `open`, `moving` or `intermediate`, as in `GET /gate/status`.
+- `basis`: `signals`, `stop` or `timeout`, as in `GET /gate/status`.
 - `direction`: while moving, `opening` after the gate left the closed position or after an `open` or `half` command, `closing` after it left the open position or after a `close` command, otherwise `unknown`; `null` while the gate is at rest.
 - `cause`: `command:<name>` (`command:stop` for `POST /gate/stop`) when the change follows a relay pulse of this server within 2 seconds, otherwise `external` (a remote control, the command line, or the gate reaching its end position by itself); `null` for the state read when the server started.
 - `cooldownUntil`: from when the next movement will be accepted, or `null` when it would be accepted now.
@@ -170,7 +179,7 @@ pip uninstall gate-controller
 
 For development without a physical Raspberry Pi, the project includes mock modules in the `mocks` directory. The `MOCK_GPIO.py` file simulates GPIO functionality, enabling testing and development on other systems.
 
-When `RPi.GPIO` is not installed, `gate-controller-server` drives the mock GPIO with a simulated gate. It starts closed; the relay pulses of the gate commands move it, any command while it moves stops it as on the real drive, and `GET /gate/status` reports `moving`, `open`, `closed` or `intermediate` with the timing of the real drive. The optional `simulator` configuration section adjusts it:
+When `RPi.GPIO` is not installed, `gate-controller-server` drives the mock GPIO with a simulated gate. It starts closed; the relay pulses of the gate commands move it, any command while it moves stops it as on the real drive, its moving signal stays active after a stop part way like the drive's warning lamp output, and `GET /gate/status` reports `moving`, `open`, `closed` or `intermediate` with the timing of the real drive. The optional `simulator` configuration section adjusts it:
 
 ```yaml
 simulator:

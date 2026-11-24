@@ -101,7 +101,8 @@ paths:
         Pulses the toggle relay only while the gate moves; a stop is never
         rejected by the movement window and neither starts nor extends it.
         At rest nothing is sent, so a repeated or late stop cannot move the
-        gate.
+        gate. After a stop the gate is at rest (`intermediate`), although
+        the drive's moving signal stays active.
       responses:
         '200':
           description: The gate was moving and the relay pulse has been sent.
@@ -134,7 +135,8 @@ paths:
       description: >
         Reads the gate drive's status signals. `moving` while the gate is in
         motion, `closed` or `open` in an end position, and `intermediate`
-        while the gate stands between the end positions.
+        while the gate stands between the end positions. `basis` tells
+        whether the status is read from the signals or inferred.
       responses:
         '200':
           description: The current status of the gate.
@@ -147,6 +149,8 @@ paths:
                     type: string
                     enum: [open, closed, moving, intermediate]
                     example: closed
+                  basis:
+                    $ref: '#/components/schemas/Basis'
         '403':
           $ref: '#/components/responses/Forbidden'
         '500':
@@ -189,6 +193,16 @@ paths:
 
 components:
   schemas:
+    Basis:
+          type: string
+          enum: [signals, stop, timeout]
+          description: >
+            What the status rests on. `signals`: read from the status
+            inputs. `stop`: this server stopped the gate, while the drive's
+            moving signal stays active. `timeout`: the moving signal has been
+            active for longer than `max_travel_time`, so the gate is assumed
+            at rest; this is an assumption.
+          example: signals
     GateEvent:
       type: object
       description: The data of a `gate` event.
@@ -201,6 +215,8 @@ components:
           type: string
           enum: [open, closed, moving, intermediate]
           example: moving
+        basis:
+          $ref: '#/components/schemas/Basis'
         direction:
           type: string
           nullable: true

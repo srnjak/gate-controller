@@ -4,6 +4,11 @@ A simulated gate drive behind the mock GPIO.
 Relay pulses on the command outputs move the simulated gate, and the status
 inputs follow the timing measured on the real drive. The position runs from
 0.0 (closed) to 1.0 (open) at a constant speed.
+
+The moving input follows the drive's relay output for the warning lamp, as
+on the real gate: the output is active while the gate moves, stays active
+while the gate stands stopped part way, and goes off when a movement ends at
+its target.
 """
 
 import threading
@@ -59,6 +64,7 @@ class GateSimulator:
         self._from_position = CLOSED_POSITION
         self._movement_start = 0.0
         self._last_direction = -1    # the gate last moved towards closed
+        self._lamp_held = False      # lamp output active after a stop part way
 
     def on_output(self, pin, level):
         """Called by the mock GPIO for every output change."""
@@ -77,7 +83,7 @@ class GateSimulator:
             now = self._clock()
             self._advance(now)
             if pin == self._moving_pin:
-                active = self._is_moving(now)
+                active = self._lamp_output_active(now)
             elif pin == self._closed_pin:
                 active = self._end_position_active(CLOSED_POSITION, now)
             elif pin == self._open_pin:
@@ -96,7 +102,11 @@ class GateSimulator:
         self._advance(now)
         if self._target is not None:
             # Any command while the gate moves stops it where it is, as on
-            # the real drive
+            # the real drive; once the gate has started, the lamp output stays
+            # active
+            if now >= self._movement_start and self._position not in (
+                    CLOSED_POSITION, OPEN_POSITION):
+                self._lamp_held = True
             self._target = None
         elif command == 'open':
             self._move_to(OPEN_POSITION, now)
@@ -133,9 +143,11 @@ class GateSimulator:
                                  self._target)
         if self._position == self._target:
             self._target = None
+            self._lamp_held = False
 
-    def _is_moving(self, now):
-        return self._target is not None and now >= self._movement_start
+    def _lamp_output_active(self, now):
+        return self._lamp_held or (
+            self._target is not None and now >= self._movement_start)
 
     def _end_position_active(self, end_position, now):
         if self._target is None:
